@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SeedImage · 像素绘图工作台</title>
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+
+<header class="topbar">
+  <span class="brand">Seed<b>Image</b></span>
+
+  <div class="group">
+    <button id="btnNew" title="新建画布 (Ctrl+N)">新建</button>
+    <button id="btnResize" title="调整画布尺寸">尺寸</button>
+    <button id="btnOpen" title="打开项目 .json">打开</button>
+    <button id="btnSave" title="保存项目 .json (Ctrl+S)">保存</button>
+    <button id="btnExportPng" title="导出 PNG">导出PNG</button>
+  </div>
+
+  <div class="group">
+    <button id="btnUndo" title="撤销 (Ctrl+Z)">↶ 撤销</button>
+    <button id="btnRedo" title="重做 (Ctrl+Y)">↷ 重做</button>
+  </div>
+
+  <div class="group">
+    <button id="btnZoomOut" title="缩小 (-)">−</button>
+    <span id="zoomLabel" class="readout">1600%</span>
+    <button id="btnZoomIn" title="放大 (+)">＋</button>
+    <button id="btnFit" title="适应窗口 (Ctrl+0)">适应</button>
+    <button id="btnZoomReset" title="100%">1:1</button>
+  </div>
+
+  <div class="group">
+    <label class="inline" title="像素网格线"><input type="checkbox" id="chkGrid" checked> 网格</label>
+    <label class="inline" title="笔刷大小（1 = 单像素）">笔刷
+      <input type="number" id="brushSize" value="1" min="1" max="32" step="1">
+    </label>
+  </div>
+
+  <div class="group right">
+    <button id="btnHelp" title="代码语法说明">语法帮助</button>
+  </div>
+</header>
+
+<main class="workspace">
+  <aside class="toolbar" id="toolbar" aria-label="工具箱"></aside>
+
+  <section class="stage-wrap" id="stageWrap">
+    <canvas id="stage"></canvas>
+    <div class="hud" id="hud">滚轮缩放 · 空格/中键拖动平移 · 右键擦除 · Alt 吸色</div>
+  </section>
+
+  <aside class="sidebar">
+    <nav class="tabs">
+      <button class="tab active" data-tab="palette">色卡</button>
+      <button class="tab" data-tab="layers">图层</button>
+      <button class="tab" data-tab="code">代码</button>
+    </nav>
+
+    <div class="panels">
+      <!-- ===== 色卡 ===== -->
+      <section class="panel active" id="panel-palette">
+        <div class="row">
+          <label class="inline">色卡方案
+            <select id="palettePreset">
+              <option value="default">默认 12 色</option>
+              <option value="pico8">PICO-8 16 色</option>
+              <option value="gray">灰度 16 级</option>
+              <option value="warm">暖色 12 色</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="row">
+          <span class="label">色号 <b id="activeKeyLabel">1</b></span>
+          <input type="color" id="colorPicker" value="#e53935" title="修改当前色号的颜色">
+          <span id="colorInfo" class="muted mono">#E53935</span>
+        </div>
+
+        <div class="swatches" id="swatches"></div>
+
+        <div class="row">
+          <button id="btnAddColor">＋ 新增色号</button>
+          <button id="btnDelColor">－ 删除色号</button>
+          <button id="btnCopyColor" title="复制当前颜色">复制色值</button>
+        </div>
+        <p class="muted small">
+          点击色块选中；色卡里的每个色号都可以在代码中用 <code>&lt;号&gt;</code> 调用。
+          例：<code>&lt;1&gt;</code> = 1 号颜色（默认为红）。
+        </p>
+      </section>
+
+      <!-- ===== 图层 ===== -->
+      <section class="panel" id="panel-layers">
+        <div class="row">
+          <button id="btnLayerAdd">＋ 新建</button>
+          <button id="btnLayerDup">复制</button>
+          <button id="btnLayerDel">删除</button>
+        </div>
+        <div class="row">
+          <button id="btnLayerUp">上移</button>
+          <button id="btnLayerDown">下移</button>
+          <button id="btnLayerMerge" title="与下方图层合并">向下合并</button>
+          <button id="btnLayerClear">清空</button>
+        </div>
+        <div class="row">
+          <label class="inline">不透明度
+            <input type="range" id="layerOpacity" min="0" max="100" value="100">
+            <span id="opacityLabel" class="mono">100%</span>
+          </label>
+        </div>
+        <div class="layer-list" id="layerList"></div>
+        <p class="muted small">双击图层名可重命名；👁 控制显示 / 隐藏。</p>
+      </section>
+
+      <!-- ===== 代码 ===== -->
+      <section class="panel" id="panel-code">
+        <div class="row">
+          <select id="codeTarget" title="应用目标">
+            <option value="doc">→ 替换整个文档</option>
+            <option value="layer">→ 当前图层</option>
+            <option value="newlayer">→ 新图层</option>
+          </select>
+          <button id="btnApplyCode" class="primary">▶ 应用代码</button>
+        </div>
+
+        <textarea id="codeArea" spellcheck="false" wrap="off"></textarea>
+
+        <div class="row">
+          <label class="inline"><input type="checkbox" id="chkSkipTransparent"> 透明像素不覆盖</label>
+          <label class="inline"><input type="checkbox" id="chkDefs" checked> 输出色卡定义</label>
+          <label class="inline"><input type="checkbox" id="chkPad"> 空格分隔</label>
+        </div>
+
+        <div id="codeMsg" class="msg"></div>
+
+        <div class="row">
+          <button id="btnGenCode">↺ 从画布生成</button>
+          <select id="codeSource" title="生成代码的来源">
+            <option value="layer">当前图层</option>
+            <option value="flat">合成（可见图层）</option>
+          </select>
+        </div>
+        <div class="row">
+          <button id="btnExample">载入示例</button>
+          <button id="btnCodeCopy">复制</button>
+          <button id="btnCodeDownload">下载 .txt</button>
+          <button id="btnCodeUpload">导入 .txt</button>
+        </div>
+      </section>
+    </div>
+  </aside>
+</main>
+
+<footer class="statusbar">
+  <span id="statusInfo">就绪</span>
+  <span id="statusCursor" class="mono"></span>
+  <span id="statusMsg" class="muted"></span>
+</footer>
+
+<div class="modal" id="modal" hidden>
+  <div class="modal-box">
+    <h3 id="modalTitle">标题</h3>
+    <div id="modalBody" class="modal-body"></div>
+    <div class="modal-actions">
+      <button id="modalCancel">取消</button>
+      <button id="modalOk" class="primary">确定</button>
+    </div>
+  </div>
+</div>
+
+<input type="file" id="fileProject" accept=".json,application/json" hidden>
+<input type="file" id="fileCode" accept=".txt,.text,.md,.csv" hidden>
+
+<script src="app.js"></script>
+</body>
+</html>

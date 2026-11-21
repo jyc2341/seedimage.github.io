@@ -1,0 +1,17 @@
+{
+  "name": "seedimage",
+  "version": "1.0.0",
+  "private": true,
+  "description": "SeedImage — 像素绘图工作台：像画图软件一样画，也可以用 <色号> 代码写图",
+  "main": "app.js",
+  "scripts": {
+    "test": "node test/core.test.js && node test/ui.smoke.js",
+    "examples": "node tools/make-examples.js && node tools/check-examples.js",
+    "preview": "node tools/render-png.js examples/01-用户示例5x5.txt preview/sample-5x5.png 32 \"#2B2F3A\" && node tools/render-png.js examples/02-笑脸16x16.txt preview/smiley.png 16 \"#2B2F3A\" && node tools/render-png.js examples/03-爱心16x16.txt preview/heart.png 16 \"#2B2F3A\" && node tools/render-png.js examples/04-色卡总览12x12.txt preview/palette.png 20 \"#2B2F3A\" && node tools/render-png.js examples/05-直接写颜色渐变8x8.txt preview/gradient.png 24 \"#2B2F3A\"",
+    "skill": "node tools/install-skill.js",
+    "skill:test": "node skill/seedimage-draw/scripts/selftest.mjs",
+    "skill:demo": "node skill/seedimage-draw/scripts/draw.mjs skill/seedimage-draw/examples/sprout-32.mjs preview/sprout-32.png --scale 16 --code preview/sprout-32.txt --svg preview/sprout-32.svg",
+    "serve": "node tools/serve.js"
+  },
+  "license": "MIT"
+}
